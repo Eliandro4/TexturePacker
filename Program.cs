@@ -1,12 +1,26 @@
 ﻿using System;
 using System.IO;
-using System.Drawing;
+using ImageMagick;
+using ImageMagick.Drawing;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
 namespace TexturePacker
 {
+    public class Rectangle
+    {
+        public int X { get; set; }
+        public int Y { get; set; }
+        public int Height { get; set; }
+        public int Width { get; set; }
+        public void Size(int Width, int Height)
+        {
+            this.Width = Width;
+            this.Height = Height;
+        }
+    }
+
     /// <summary>
     /// Represents a Texture in an atlas
     /// </summary>
@@ -211,8 +225,8 @@ namespace TexturePacker
                 string atlasName = String.Format(prefix + "{0:000}" + ".png", atlasCount);
 
                 //1: Save images
-                Image img = CreateAtlasImage(atlas);
-                img.Save(atlasName, System.Drawing.Imaging.ImageFormat.Png);
+                MagickImage img = CreateAtlasImage(atlas);
+                img.Write(atlasName, MagickFormat.Png);
 
                 //2: save description in file
                 foreach (Node n in atlas.Nodes)
@@ -247,7 +261,7 @@ namespace TexturePacker
 
             foreach (FileInfo fi in files)
             {
-                Image img = Image.FromFile(fi.FullName);
+                using (var img = new MagickImage(fi.FullName))
                 if (img != null)
                 {
                     if (img.Width <= AtlasSize && img.Height <= AtlasSize)
@@ -255,8 +269,8 @@ namespace TexturePacker
                         TextureInfo ti = new TextureInfo();
 
                         ti.Source = fi.FullName;
-                        ti.Width = img.Width;
-                        ti.Height = img.Height;
+                        ti.Width = (int)img.Width;
+                        ti.Height = (int)img.Height;
 
                         SourceTextures.Add(ti);
 
@@ -370,7 +384,7 @@ namespace TexturePacker
             textures = _Textures.ToList();
 
             Node root = new Node();
-            root.Bounds.Size = new Size(_Atlas.Width, _Atlas.Height);
+            root.Bounds.Size(_Atlas.Width, _Atlas.Height);
             root.SplitType = SplitType.Horizontal;
 
             freeList.Add(root);
@@ -405,50 +419,56 @@ namespace TexturePacker
             return textures;
         }
 
-        private Image CreateAtlasImage(Atlas _Atlas)
+        private MagickImage CreateAtlasImage(Atlas _Atlas)
         {
-            Image img = new Bitmap(_Atlas.Width, _Atlas.Height, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
-            Graphics g = Graphics.FromImage(img);
-
-            if (DebugMode)
-            {
-                g.FillRectangle(Brushes.Green, new Rectangle(0, 0, _Atlas.Width, _Atlas.Height));
-            }
+            var atlas = new MagickImage(MagickColors.Transparent, (uint)_Atlas.Width, (uint)_Atlas.Height);
 
             foreach (Node n in _Atlas.Nodes)
             {
                 if (n.Texture != null)
                 {
-                    Image sourceImg = Image.FromFile(n.Texture.Source);
-                    g.DrawImage(sourceImg, n.Bounds);
+                    using (var src = new MagickImage(n.Texture.Source))
+                    {
+                        atlas.Composite(src, n.Bounds.X, n.Bounds.Y, CompositeOperator.Over);
+                    }
 
                     if (DebugMode)
                     {
-                        string label = Path.GetFileNameWithoutExtension(n.Texture.Source);
-                        SizeF labelBox = g.MeasureString(label, SystemFonts.MenuFont, new SizeF(n.Bounds.Size));
-                        RectangleF rectBounds = new Rectangle(n.Bounds.Location, new Size((int)labelBox.Width, (int)labelBox.Height));
-                        g.FillRectangle(Brushes.Black, rectBounds);
-                        g.DrawString(label, SystemFonts.MenuFont, Brushes.White, rectBounds);
-                    }
-                }
-                else
-                {
-                    g.FillRectangle(Brushes.DarkMagenta, n.Bounds);
+                        // Desenhar retângulo e texto com Drawables
+                        var drawables = new Drawables()
+                        .FillColor(MagickColors.Black)
+                        .Rectangle(n.Bounds.X, n.Bounds.Y,
+                                n.Bounds.X + n.Bounds.Width, n.Bounds.Y + 15)
+                        .FillColor(MagickColors.White)
+                        .FontPointSize(12)
+                        .Text(n.Bounds.X, n.Bounds.Y + 12, Path.GetFileNameWithoutExtension(n.Texture.Source));
 
-                    if (DebugMode)
-                    {
-                        string label = n.Bounds.Width.ToString() + "x" + n.Bounds.Height.ToString();
-                        SizeF labelBox = g.MeasureString(label, SystemFonts.MenuFont, new SizeF(n.Bounds.Size));
-                        RectangleF rectBounds = new Rectangle(n.Bounds.Location, new Size((int)labelBox.Width, (int)labelBox.Height));
-                        g.FillRectangle(Brushes.Black, rectBounds);
-                        g.DrawString(label, SystemFonts.MenuFont, Brushes.White, rectBounds);
+                        drawables.Draw(atlas);
                     }
                 }
+            else if (DebugMode)
+            {
+                // Área vazia
+                var drawables = new Drawables()
+                    .FillColor(MagickColors.DarkMagenta)
+                    .Rectangle(n.Bounds.X, n.Bounds.Y,
+                            n.Bounds.X + n.Bounds.Width, n.Bounds.Y + n.Bounds.Height);
+
+                string label = $"{n.Bounds.Width}x{n.Bounds.Height}";
+                drawables.FillColor(MagickColors.Black)
+                    .Rectangle(n.Bounds.X, n.Bounds.Y,
+                            n.Bounds.X + 50, n.Bounds.Y + 15)
+                    .FillColor(MagickColors.White)
+                    .FontPointSize(12)
+                    .Text(n.Bounds.X, n.Bounds.Y + 12, label);
+
+                drawables.Draw(atlas);
+            }
             }
 
-            return img;
+            return atlas;
         }
-
+        
     }
 
 
