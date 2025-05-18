@@ -14,10 +14,10 @@ namespace TexturePacker
         public int Y { get; set; }
         public int Height { get; set; }
         public int Width { get; set; }
-        public void Size(int Width, int Height)
+        public void Size(int width, int height)
         {
-            this.Width = Width;
-            this.Height = Height;
+            this.Width = width;
+            this.Height = height;
         }
     }
 
@@ -82,7 +82,7 @@ namespace TexturePacker
         /// <summary>
         /// Bounds of this node in the atlas
         /// </summary>
-        public Rectangle Bounds;
+        public Rectangle Bounds = new Rectangle();
 
         /// <summary>
         /// Texture this node represents
