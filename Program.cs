@@ -243,7 +243,7 @@ namespace TexturePacker
                 {
                     if (n.Texture != null)
                     {
-                        Lista.Add(new TextureJson(n.Texture.Source, n.Bounds.X, n.Bounds.Y, n.Bounds.Width, n.Bounds.Height, atlasName));
+                        Lista.Add(new TextureJson(Path.GetFileNameWithoutExtension(n.Texture.Source), n.Bounds.X, n.Bounds.Y, n.Bounds.Width, n.Bounds.Height, Path.GetFileNameWithoutExtension(atlasName)));
                     }
                 }
 
