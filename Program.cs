@@ -4,11 +4,11 @@ using ImageMagick;
 using ImageMagick.Drawing;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
+using System.Text.Json;
 
 namespace TexturePacker
 {
-    public class Rectangle
+    public struct Rectangle
     {
         public int X { get; set; }
         public int Y { get; set; }
@@ -19,6 +19,16 @@ namespace TexturePacker
             this.Width = width;
             this.Height = height;
         }
+    }
+
+    public class TextureJson(string Nome, int Xis, int Yips, int Wid, int Hei, string Tex)
+    {
+        public string Name { get; set; } = Nome;
+        public string Texture { get; set; } = Tex;
+        public int X { get; set; } = Xis;
+        public int Y { get; set; } = Yips;
+        public int Width { get; set; } = Wid;
+        public int Height { get; set; } = Hei;
     }
 
     /// <summary>
@@ -82,7 +92,7 @@ namespace TexturePacker
         /// <summary>
         /// Bounds of this node in the atlas
         /// </summary>
-        public Rectangle Bounds = new Rectangle();
+        public Rectangle Bounds;
 
         /// <summary>
         /// Texture this node represents
@@ -218,7 +228,7 @@ namespace TexturePacker
 
             string descFile = _Destination;
             StreamWriter tw = new StreamWriter(_Destination);
-            tw.WriteLine("source_tex, atlas_tex, u, v, scale_u, scale_v");
+            //tw.WriteLine("Name, X, Y, Width, Height");
 
             foreach (Atlas atlas in Atlasses)
             {
@@ -227,20 +237,17 @@ namespace TexturePacker
                 //1: Save images
                 MagickImage img = CreateAtlasImage(atlas);
                 img.Write(atlasName, MagickFormat.Png);
-
+                List<TextureJson> Lista = [];
                 //2: save description in file
                 foreach (Node n in atlas.Nodes)
                 {
                     if (n.Texture != null)
                     {
-                        tw.Write(n.Texture.Source + ", ");
-                        tw.Write(atlasName + ", ");
-                        tw.Write(((float)n.Bounds.X / atlas.Width).ToString() + ", ");
-                        tw.Write(((float)n.Bounds.Y / atlas.Height).ToString() + ", ");
-                        tw.Write(((float)n.Bounds.Width / atlas.Width).ToString() + ", ");
-                        tw.WriteLine(((float)n.Bounds.Height / atlas.Height).ToString());
+                        Lista.Add(new TextureJson(n.Texture.Source, n.Bounds.X, n.Bounds.Y, n.Bounds.Width, n.Bounds.Height, atlasName));
                     }
                 }
+
+                tw.Write(JsonSerializer.Serialize(Lista, new JsonSerializerOptions { WriteIndented = true }));
 
                 ++atlasCount;
             }
