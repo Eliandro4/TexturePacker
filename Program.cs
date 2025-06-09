@@ -236,7 +236,7 @@ namespace TexturePacker
 
                 //1: Save images
                 MagickImage img = CreateAtlasImage(atlas);
-                img.Write(atlasName, MagickFormat.Png);
+                img.Write(atlasName, MagickFormat.Png32);
                 List<TextureJson> Lista = [];
                 //2: save description in file
                 foreach (Node n in atlas.Nodes)
