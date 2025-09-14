@@ -230,6 +230,8 @@ namespace TexturePacker
             StreamWriter tw = new StreamWriter(_Destination);
             //tw.WriteLine("Name, X, Y, Width, Height");
 
+            List<TextureJson> Lista = [];
+
             foreach (Atlas atlas in Atlasses)
             {
                 string atlasName = String.Format(prefix + "{0:000}" + ".png", atlasCount);
@@ -237,7 +239,7 @@ namespace TexturePacker
                 //1: Save images
                 MagickImage img = CreateAtlasImage(atlas);
                 img.Write(atlasName, MagickFormat.Png32);
-                List<TextureJson> Lista = [];
+                
                 //2: save description in file
                 foreach (Node n in atlas.Nodes)
                 {
@@ -246,11 +248,9 @@ namespace TexturePacker
                         Lista.Add(new TextureJson(Path.GetFileNameWithoutExtension(n.Texture.Source), n.Bounds.X, n.Bounds.Y, n.Bounds.Width, n.Bounds.Height, Path.GetFileNameWithoutExtension(atlasName)));
                     }
                 }
-
-                tw.Write(JsonSerializer.Serialize(Lista, new JsonSerializerOptions { WriteIndented = true }));
-
                 ++atlasCount;
             }
+            tw.Write(JsonSerializer.Serialize(Lista, new JsonSerializerOptions { WriteIndented = true }));
             tw.Close();
 
             tw = new StreamWriter(prefix + ".log");
