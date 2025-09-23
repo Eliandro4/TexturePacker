@@ -21,14 +21,42 @@ namespace TexturePacker
         }
     }
 
-    public class TextureJson(string Nome, int Xis, int Yips, int Wid, int Hei, string Tex)
+    public class OUTPUT
     {
-        public string Name { get; set; } = Nome;
-        public string Texture { get; set; } = Tex;
-        public int X { get; set; } = Xis;
-        public int Y { get; set; } = Yips;
-        public int Width { get; set; } = Wid;
-        public int Height { get; set; } = Hei;
+        public List<GMSpriteV> Sprites { get; set; }
+        public List<GMTileV> Tilesets { get; set; }
+    }
+
+    public class GMTileV
+    {
+    public string Name { get; set; }
+    public ushort BoundingWidth { get; set; }
+    public ushort BoundingHeight { get; set; }
+    public TextureJson Texture { get; set; }
+    }
+
+    public class TextureJson
+    {
+        public int Frame { get; set; }
+        public string Texture { get; set; }
+        public int SourceX { get; set; }
+        public int SourceY { get; set; }
+        public int SourceWidth { get; set; }
+        public int SourceHeight { get; set; }
+        public int TargetX { get; set; }
+        public int TargetY { get; set; }
+        public int TargetWidth { get; set; }
+        public int TargetHeight { get; set; }
+    }
+
+    public class GMSpriteV
+    {
+        public string Name { get; set; }
+        public uint Width { get; set; }
+        public uint Height { get; set; }
+        public int OriginX { get; set; }
+        public int OriginY { get; set; }
+        public List<TextureJson> Textures { get; set; }
     }
 
     /// <summary>
@@ -171,11 +199,17 @@ namespace TexturePacker
         /// </summary>
         public List<Atlas> Atlasses;
 
+        /// <summary>
+        /// Json list of all the output atlases
+        /// </summary>
+        public OUTPUT Result;
+
         public Packer()
         {
             SourceTextures = new List<TextureInfo>();
             Log = new StringWriter();
             Error = new StringWriter();
+            Result = new OUTPUT() { Sprites = [], Tilesets = [] };
         }
 
         public void Process(string _SourceDir, string _Pattern, int _AtlasSize, int _Padding, bool _DebugMode)
@@ -245,7 +279,14 @@ namespace TexturePacker
                 {
                     if (n.Texture != null)
                     {
-                        Lista.Add(new TextureJson(Path.GetFileNameWithoutExtension(n.Texture.Source), n.Bounds.X, n.Bounds.Y, n.Bounds.Width, n.Bounds.Height, Path.GetFileNameWithoutExtension(atlasName)));
+                        Lista.Add(new TextureJson()
+                        {
+                            SourceX = n.Bounds.X
+                            SourceY = n.Bounds.Y
+                            SourceWidth = n.Bounds.Width
+                            SourceHeight n.Bounds.Height
+                            Texture = Path.GetFileNameWithoutExtension(atlasName)
+                        });
                     }
                 }
                 ++atlasCount;
